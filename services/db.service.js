@@ -3,7 +3,7 @@ const MongoClient = require('mongodb').MongoClient
 const config = require('../config')
 
 // Database Name
-const dbName = 'rello_db'
+const dbName = 'codecoach_db'
 
 var dbConn = null
 
