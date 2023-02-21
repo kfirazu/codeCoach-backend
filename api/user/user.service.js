@@ -33,13 +33,14 @@ async function getById(userId) {
 async function getByUserName(username) {
     try {
         const collection = await getUserCollection()
-        const username = await collection.findOne({ username })
+        const user = await collection.findOne({ username })
         return user
     } catch (err) {
         logger.error(`Error while finding user by username: ${username}`, err)
         throw err
     }
 }
+
 async function addUser(user) {
     try {
         const collection = await getUserCollection()
