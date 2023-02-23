@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/static/css/main.3c0592f0.css",
+    "main.js": "/static/js/main.cc585bf8.js",
+    "static/media/Montserrat-Light.ttf": "/static/media/Montserrat-Light.02afb26fe72fcc052988.ttf",
+    "static/media/Lato-Regular.ttf": "/static/media/Lato-Regular.9d883d540ee2b4de8024.ttf",
+    "index.html": "/index.html",
+    "main.3c0592f0.css.map": "/static/css/main.3c0592f0.css.map",
+    "main.cc585bf8.js.map": "/static/js/main.cc585bf8.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.3c0592f0.css",
+    "static/js/main.cc585bf8.js"
+  ]
+}
