@@ -44,8 +44,8 @@ function setupSocketAPI(http) {
                 room: codeBlockId,
                 userId: loggedInUser._id
             }
-            setTimeout(() => { broadcast(broadcastDetails)}, 1000)
-           
+            setTimeout(() => { broadcast(broadcastDetails) }, 1000)
+
             logger.info(`Socket is joining code block ${codeBlockId} [id: ${socket.id}]`)
         })
 
