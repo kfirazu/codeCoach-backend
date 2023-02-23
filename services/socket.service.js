@@ -65,6 +65,13 @@ function setupSocketAPI(http) {
             broadcast(broadcastDetails)
             // gIo.to(socket.codeBlockId).emit('update-code', codeBlock)
         })
+
+        socket.on('user-leave-room', ({ loggedInUser, codeBlockId }) => {
+            console.log('codeBlockId:', codeBlockId)
+            console.log('loggedInUser:', loggedInUser)
+            logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
+            socket.leave(socket.codeBlockId)
+        })
     })
 }
 
