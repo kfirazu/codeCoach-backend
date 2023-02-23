@@ -16,12 +16,12 @@ function setupSocketAPI(http) {
 
         socket.on('set-code-block', async (codeBlockId, loggedInUser) => {
             if (socket.codeBlockId === codeBlockId) return
-            if (socket.codeBlockId) {
-                const user = await userService.getById(loggedInUser._id)
-                user.isMentor = false
-                socket.leave(socket.codeBlockId)
-                logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
-            }
+            // if (socket.codeBlockId) {
+            //     const user = await userService.getById(loggedInUser._id)
+            //     user.isMentor = false
+            //     socket.leave(socket.codeBlockId)
+            //     logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
+            // }
             const connectedUsers = []
             const connectedUser = await userService.getByUserName(loggedInUser?.username)
             if (loggedInUser) {
@@ -44,7 +44,8 @@ function setupSocketAPI(http) {
                 room: codeBlockId,
                 userId: loggedInUser._id
             }
-            broadcast(broadcastDetails)
+            setTimeout(() => { broadcast(broadcastDetails)}, 1000)
+           
             logger.info(`Socket is joining code block ${codeBlockId} [id: ${socket.id}]`)
         })
 
@@ -67,10 +68,12 @@ function setupSocketAPI(http) {
         })
 
         socket.on('user-leave-room', ({ loggedInUser, codeBlockId }) => {
-            console.log('codeBlockId:', codeBlockId)
-            console.log('loggedInUser:', loggedInUser)
-            logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
-            socket.leave(socket.codeBlockId)
+            if (socket.codeBlockId === codeBlockId) {
+                socket.leave(socket.codeBlockId)
+                logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
+            } else {
+                logger.warn(`Socket is not joined to room ${codeBlockId} [id: ${socket.id}]`);
+            }
         })
     })
 }
