@@ -18,28 +18,33 @@ function setupSocketAPI(http) {
             if (socket.codeBlockId === codeBlockId) return
             if (socket.codeBlockId) {
                 const user = await userService.getById(loggedInUser._id)
-                console.log('user:', user)
                 user.isMentor = false
-                console.log('user when leaving:', user)
                 socket.leave(socket.codeBlockId)
-                console.log('user:', user)
                 logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
             }
             const connectedUsers = []
             const connectedUser = await userService.getByUserName(loggedInUser?.username)
-            connectedUsers.push(connectedUser)
-
+            if (loggedInUser) {
+                connectedUsers.push(connectedUser)
+            }
+            // Sets first user in room as mentor
             if (connectedUsers.length === 1) {
                 connectedUsers[0].isMentor = true
+                // Sets all other users isMentor key to false
             } else if (connectedUsers.length > 1) {
                 connectedUsers.forEach((user, idx) => {
                     if (idx >= 1) user.isMentor = false
                 })
-
             }
-            console.log('connectedUsers:', connectedUsers)
             socket.join(codeBlockId)
             socket.codeBlockId = codeBlockId
+            const broadcastDetails = {
+                type: 'user-connected',
+                data: connectedUsers,
+                room: codeBlockId,
+                userId: loggedInUser._id
+            }
+            broadcast(broadcastDetails)
             logger.info(`Socket is joining code block ${codeBlockId} [id: ${socket.id}]`)
         })
 
