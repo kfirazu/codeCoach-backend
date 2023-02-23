@@ -27,7 +27,6 @@ async function update(req, res) {
     try {
         const codeBlock = req.body
         const updatedCodeBlock = await codeBlockService.updateCodeBlock(codeBlock)
-        console.log('updatedCodeBlock:', updatedCodeBlock)
         res.send(updatedCodeBlock)
     } catch (err) {
         logger.error('Failed to update code block', err)

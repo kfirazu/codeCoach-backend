@@ -13,7 +13,6 @@ async function query() {
     }
 }
 
-
 async function getCodeBlockById(codeBlockId) {
     try {
         const collection = await _getCodeBlockCollection()
@@ -34,6 +33,7 @@ async function updateCodeBlock(codeBlock) {
         const collection = await _getCodeBlockCollection()
         await collection.updateOne({ _id: codeBlockToSave._id }, { $set: codeBlockToSave })
         return codeBlock
+        // return { msg: 'Code block updated successfully' }
     } catch (err) {
         logger.error(`Cannot update code block: ${codeBlock}`, err)
         throw err

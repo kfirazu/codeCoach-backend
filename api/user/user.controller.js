@@ -22,6 +22,18 @@ async function getUser(req, res) {
     }
 }
 
+async function updateUser(req, res) {
+    try {
+        const user = req.body
+        await userService.update(user)
+        res.send({ msg: 'User updated successfully' })
+    } catch (err) {
+        logger.error('Failed to update user', err)
+        res.status(500).send({ err: 'Failed to update user' })
+
+    }
+}
+
 async function addUser(req, res) {
     try {
         const user = req.body
@@ -37,5 +49,6 @@ async function addUser(req, res) {
 module.exports = {
     getUsers,
     getUser,
-    addUser
+    addUser,
+    updateUser
 }

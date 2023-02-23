@@ -1,69 +1,47 @@
-const { Socket } = require('socket.io')
 const logger = require('./logger.service')
-const boardService = require('../api/board/board.service')
+const codeBlockService = require('../api/codeblock/codeblock.service.js')
+const userService = require('../api/user/user.service')
+
 var gIo = null
 
 function setupSocketAPI(http) {
-    gIo = require('socket.io')(http, {
-        cors: {
-            origin: '*',
-        }
-    })
+    gIo = require('socket.io')(http, { cors: { origin: '*' } })
 
-    gIo.on('connection', socket => {
+    gIo.on('connection', (socket) => {
         logger.info(`New connected socket [id: ${socket.id}]`)
 
-        socket.on('disconnect', socket => {
+        socket.on('disconnect', (socket) => {
             logger.info(`Socket disconnected [id: ${socket.id}]`)
         })
 
-        socket.on('set-board', boardId => {
-            if (socket.boardId === boardId) return
-            if (socket.boardId) {
-                socket.leave(socket.boardId)
-                logger.info(`Socket is leaving board ${socket.boardId} [id: ${socket.id}]`)
+        socket.on('set-code-block', async (codeBlockId, loggedInUser) => {
+            if (socket.codeBlockId === codeBlockId) return
+            if (socket.codeBlockId) {
+                const user = await userService.getById(loggedInUser._id)
+                console.log('user:', user)
+                user.isMentor = false
+                console.log('user when leaving:', user)
+                socket.leave(socket.codeBlockId)
+                console.log('user:', user)
+                logger.info(`Socket is leaving codeblock ${socket.codeBlockId} [id: ${socket.id}]`)
             }
-            socket.join(boardId)
-            socket.boardId = boardId
-            logger.info(`Socket is joining board ${boardId} [id: ${socket.id}]`)
+            const connectedUsers = []
+            const connectedUser = await userService.getByUserName(loggedInUser?.username)
+            connectedUsers.push(connectedUser)
+
+            if (connectedUsers.length === 1) {
+                connectedUsers[0].isMentor = true
+            } else if (connectedUsers.length > 1) {
+                connectedUsers.forEach((user, idx) => {
+                    if (idx >= 1) user.isMentor = false
+                })
+
+            }
+            console.log('connectedUsers:', connectedUsers)
+            socket.join(codeBlockId)
+            socket.codeBlockId = codeBlockId
+            logger.info(`Socket is joining code block ${codeBlockId} [id: ${socket.id}]`)
         })
-
-        socket.on('update-board', async (boardId) => {
-            logger.info(`Update board from socket [id: ${socket.id}], emitting to board ${boardId}`)
-            // const broadcastDetails = {
-            //     type: 'update-board',
-            //     data: userService.getBoardById(boardId)},
-            //     room: socket.boardId,
-            //     userId: 
-            // }
-            const board = await boardService.getBoardById(boardId)
-            gIo.to(socket.boardId).emit('board-updated', board)
-        })
-
-        // socket.on('chat-send-msg', msg => {
-        //     logger.info(`New chat msg from socket [id: ${socket.id}], emitting to topic ${socket.myTopic}`)
-        //     // emits to all sockets:
-        //     // gIo.emit('chat addMsg', msg)
-        //     // emits only to sockets in the same room
-        //     toyService.addMsgToToy(msg)
-        //     console.log('msg', msg);
-        //     gIo.to(socket.toyId).emit('chat-add-msg', msg)
-        // })
-
-        // Example
-        // socket.on('send-notification', notif => {
-        //     logger.info(`New chat msg from socket [id: ${socket.id}], emitting to topic ${socket.myTopic}`)
-        //     // emits to all sockets:
-        //     // gIo.emit('chat addMsg', msg)
-        //     // emits only to sockets in the same room
-        //     gIo.to(notif.userId).emit('chat-add-msg', notif)
-        // })
-
-        // socket.on('chat-typing', (userTyping) => {
-        //     console.log('user', socket.toyId)
-
-        //     socket.broadcast.to(socket.toyId).emit('chat-user-typing', userTyping)
-        // })
 
         socket.on('set-user-socket', userId => {
             logger.info(`Setting socket.userId = ${userId} for socket [id: ${socket.id}]`)
@@ -71,44 +49,31 @@ function setupSocketAPI(http) {
             socket.join(userId)
         })
 
-        socket.on('unset-user-socket', () => {
-            logger.info(`Removing socket.userId for socket [id: ${socket.id}]`)
-            delete socket.userId
+        socket.on('update-code-block', async (codeBlock, loggedInUser) => {
+            logger.info(`Update code block from socket [id: ${socket.id}], emitting to code block ${codeBlock._id}`)
+            const broadcastDetails = {
+                type: 'update-code',
+                data: codeBlock,
+                room: codeBlock._id,
+                userId: loggedInUser._id
+            }
+            broadcast(broadcastDetails)
+            // gIo.to(socket.codeBlockId).emit('update-code', codeBlock)
         })
     })
 }
 
-// function emitTo({ type, data, label }) {
-//     if (label) gIo.to('watching:' + label.toString()).emit(type, data)
-//     else gIo.emit(type, data)
-// }
-
-// async function emitToUser({ type, data, userId }) {
-//     userId = userId?.toString()
-//     const socket = await _getUserSocket(userId)
-
-//     if (socket) {
-//         logger.info(`Emiting event: ${type} to user: ${userId} socket [id: ${socket.id}]`)
-//         socket.emit(type, data)
-//     } else {
-//         logger.info(`No active socket for user: ${userId}`)
-//         // _printSockets()
-//     }
-// }
-
-// If possible, send to all sockets BUT not the current socket 
+// If possible, send to all sockets BUT not the current socket
 // Optionally, broadcast to a room / to all
 async function broadcast({ type, data, room = null, userId }) {
-
     userId = userId?.toString()
-
     logger.info(`Broadcasting event: ${type}`)
     const excludedSocket = await _getUserSocket(userId)
+
     if (room && excludedSocket) {
         logger.info(`Broadcast to room ${room} excluding user: ${userId}`)
         excludedSocket.broadcast.to(room).emit(type, data)
     } else if (excludedSocket) {
-        console.log("in")
         logger.info(`Broadcast to all excluding user: ${userId}`)
         excludedSocket.broadcast.emit(type, data)
     } else if (room) {
@@ -122,33 +87,18 @@ async function broadcast({ type, data, room = null, userId }) {
 
 async function _getUserSocket(userId) {
     const sockets = await _getAllSockets()
-    const socket = sockets.find(s => s.userId === userId)
+    const socket = sockets.find((s) => s.userId === userId)
     return socket
 }
-
 async function _getAllSockets() {
     // return all Socket instances
     const sockets = await gIo.fetchSockets()
     return sockets
 }
 
-async function _printSockets() {
-    const sockets = await _getAllSockets()
-    console.log(`Sockets: (count: ${sockets.length}):`)
-    sockets.forEach(_printSocket)
-}
-
-function _printSocket(socket) {
-    console.log(`Socket - socketId: ${socket.id} userId: ${socket.userId}`)
-}
-
 module.exports = {
     // set up the sockets service and define the API
     setupSocketAPI,
-    // emit to everyone / everyone in a specific room (label)
-    // emitTo,
-    // emit to a specific user (if currently active in system)
-    // emitToUser,
     // Send to all sockets BUT not the current socket - if found
     // (otherwise broadcast to a room / to all)
     broadcast,

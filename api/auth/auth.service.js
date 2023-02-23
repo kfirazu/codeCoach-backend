@@ -9,11 +9,9 @@ async function login(username, password) {
         const saltRounds = 10
         logger.debug(`auth.service - login with username: ${username}`)
         const user = await userService.getByUserName(username)
-        console.log('user:', user)
         if (!user) return Promise.reject('Invalid username or password')
         let passwordHash = await bcrypt.hash(user.password, saltRounds);
         const match = await bcrypt.compare(password, passwordHash)
-        console.log('match:', match)
         if (!match) return Promise.reject('Invalid username or password')
         delete user.password
         user._id = user._id.toString()
@@ -43,7 +41,6 @@ async function signup({ username, password }) {
 }
 
 function getLoginToken(user) {
-    console.log('user:', user)
     return cryptr.encrypt(JSON.stringify(user))
 }
 
