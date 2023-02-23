@@ -2,15 +2,17 @@ const dbService = require('../../services/db.service')
 const logger = require('../../services/logger.service')
 const ObjectId = require('mongodb').ObjectId
 
-async function query(filterBy) {
+async function query() {
     try {
         const collection = await getUserCollection()
-        let users = await collection.find(filterBy).toArray()
+        let users = await collection.find({}).toArray()
         users = users.map(user => {
             delete user.password
-            user.createdAt = ObjectId(user._id).getTimestamp()
+            user.createdAt = new ObjectId(user._id).getTimestamp()
             return user
         })
+        return users
+
     }
     catch (err) {
         logger.error('Cannot get users from db', err)
@@ -21,7 +23,7 @@ async function query(filterBy) {
 async function getById(userId) {
     try {
         const collection = await getUserCollection()
-        const user = await collection.findOne({ _id: ObjectId(userId) })
+        const user = await collection.findOne({ _id: new ObjectId(userId) })
         delete user.password
         return user
     } catch (err) {
@@ -33,13 +35,14 @@ async function getById(userId) {
 async function getByUserName(username) {
     try {
         const collection = await getUserCollection()
-        const username = await collection.findOne({ username })
+        const user = await collection.findOne({ username })
         return user
     } catch (err) {
         logger.error(`Error while finding user by username: ${username}`, err)
         throw err
     }
 }
+
 async function addUser(user) {
     try {
         const collection = await getUserCollection()
@@ -47,6 +50,21 @@ async function addUser(user) {
         return user
     } catch (err) {
         logger.error('Cannot insert user', err)
+        throw err
+
+    }
+}
+
+async function update(user) {
+    try {
+        const userToSave = {
+            ...user,
+            _id: ObjectId(user._id)
+        }
+        const collection = await getUserCollection()
+        await collection.updateOne({ _id: userToSave._id }, { $set: userToSave })
+    } catch (err) {
+        logger.error(`Cannot update user ${user}`, err)
         throw err
 
     }
@@ -61,4 +79,5 @@ module.exports = {
     getById,
     addUser,
     getByUserName,
+    update
 }

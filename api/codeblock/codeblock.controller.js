@@ -14,7 +14,6 @@ async function getCodeBlocks(req, res) {
 
 async function getCodeBlock(req, res) {
     try {
-        console.log('req.params.id:', req.params.id)
         const codeBlock = await codeBlockService.getCodeBlockById(req.params.id)
         res.send(codeBlock)
     } catch (err) {
@@ -26,12 +25,17 @@ async function getCodeBlock(req, res) {
 
 async function update(req, res) {
     try {
-        const codeBlock = req.getCodeBlockById
+        const codeBlock = req.body
         const updatedCodeBlock = await codeBlockService.updateCodeBlock(codeBlock)
-        console.log('updatedCodeBlock:', updatedCodeBlock)
         res.send(updatedCodeBlock)
     } catch (err) {
         logger.error('Failed to update code block', err)
         res.status(500).send({ err: 'Failed to update code block' })
     }
+}
+
+module.exports = {
+    getCodeBlock,
+    getCodeBlocks,
+    update
 }
